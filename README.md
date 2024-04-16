@@ -106,3 +106,6 @@ This command will launch the application, and you should see the URL where the a
 
 - Upon running the Streamlit application, you will be presented with the interface of the CrewAI Movie Writers.
 
+### Credit
+
+This repo was stolen directly from https://github.com/AbubakrChan/crewai-business-product-launch, which was a super helpful starting point for someone who has never used Streamlit before.

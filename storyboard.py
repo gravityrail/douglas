@@ -13,10 +13,8 @@ from crewai_tools import (
 )
 import hashlib
 from lib.sd3 import ImageGenerator, ImageStylePresets
-
 # read our environment from .env
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
@@ -40,7 +38,6 @@ scripts_dir = os.path.join(os.path.dirname(__file__), "scripts")
 if not os.path.exists(scripts_dir):
     os.makedirs(scripts_dir)
 
-
 class SimpleDoc(BaseModel):
     text: str = Field(title="Text", description="The text to save, in Markdown format")
 
@@ -51,11 +48,7 @@ if not os.path.exists(scripts_dir):
 
 
 def create_crewai_setup(
-    movie_slug,
-    movie_name,
-    movie_genre="Action",
-    storyboard_visual_style=ImageStylePresets.COMIC_BOOK.value,
-    movie_idea="A heist movie",
+    movie_slug, movie_name, movie_genre="Action", movie_visual_style="Cartoon", movie_idea="A heist movie"
 ):
 
     # make sure the movie_slug directory exists in scripts_dir
@@ -82,16 +75,9 @@ Genre: {movie_genre}
     file_tool = FileReadTool()
 
     def run_and_store_image(description):
-        image_filename = f"image_{hashlib.md5(description.encode()).hexdigest()}.jpg"
-        image_path = os.path.join(
-            movie_dir, f"{image_filename}"
-        )
-        sd3.run(
-            description,
-            image_path,
-            style_preset=storyboard_visual_style,
-        )
-        return f"./{image_filename}"
+        image_path = os.path.join(movie_dir, f"image_{hashlib.md5(description.encode()).hexdigest()}.jpg")
+        sd3.run("a cinematic photograph of a dog wearing black glasses", image_path)
+        return image_path
 
     image_generator_tool = Tool(
         "ImageGenerator",
@@ -183,12 +169,12 @@ Genre: {movie_genre}
         description=f"""Establish the plot, setting, and characters for {movie_name}, in the {movie_genre} genre. In brief, the main idea is: {movie_idea}.""",
         expected_output="A one-pager with the title, subtitle (if any), plot, setting, and characters for the movie. Ask the script consultant for any feedback and integrate it into your work.",
         agent=screenwriter,
-        output_file=f"{movie_dir}/idea_final.md",
+        output_file=f"{movie_dir}/idea_draft.md",
     )
 
     write_treatment = Task(
         description=f"""\
-            Write a treatment for {movie_name} based on the plot, setting, and characters in the {movie_genre} genre based on the file {movie_dir}/idea_final.md.
+            Write a treatment for {movie_name} based on the plot, setting, and characters in the {movie_genre} genre based on the file {movie_dir}/idea_draft.md.
             Consult with the script consultant and writer to integrate any feedback. Be sure it remains true to the original idea: {movie_idea}
         """,
         expected_output="A concise treatment for the movie, no more than 10 pages, including title, logline, characters and synopsis. Also be sure to include a detailed description of the art style, color scheme, etc.",
@@ -214,16 +200,14 @@ Genre: {movie_genre}
     # )
 
     write_lookbook = Task(
-        description=f"""Create a lookbook for the visual style of {movie_name} based on the treatment in the file {movie_dir}/treatment.md. Include images, color schemes, art style, and any other visual references that will help the cinematographer and director. In place of actual images include extremely detailed visual descriptions. Be sure to include the visual style - e.g. cartoon, 3d animation, live action, etc.""",
+        description=f"""Create a lookbook for the visual style of {movie_name} based on the treatment in the file {movie_dir}/treatment.md. Include images, color schemes, art style, and any other visual references that will help the cinematographer and director. In place of actual illustrations include extremely detailed visual descriptions. Be sure to include the visual style - e.g. cartoon, 3d animation, live action, etc.""",
         expected_output="A lookbook for the visual style of the movie.",
         agent=cinematographer,
         output_file=f"{movie_dir}/lookbook.md",
         context=[write_treatment],
     )
 
-    def write_script_act(
-        movie_name, movie_dir, act_description, act_file, agent, context=[]
-    ):
+    def write_script_act(movie_name, movie_dir, act_description, act_file, agent, context=[]):
         return Task(
             description=f"""Write the {act_description} script for {movie_name} based on the treatment in the file {movie_dir}/treatment.md, in the {movie_genre} genre. Consult with the screenwriter, script consultant, and director to integrate any feedback.""",
             expected_output=f"The complete {act_description} of the movie script.",
@@ -259,9 +243,7 @@ Genre: {movie_genre}
         context=[write_treatment, write_first_act, write_second_act],
     )
 
-    def create_storyboard_task(
-        movie_name, movie_dir, act_description, storyboard_file, context=[]
-    ):
+    def create_storyboard_task(movie_name, movie_dir, act_description, storyboard_file, context=[]):
         return Task(
             description=f"""Create a storyboard for the {act_description} of {movie_name} based on the {act_description}. Descrbe each scene on its own paragraph, as if describing the frames on the storyboard. Make the descriptions rich enough for our artists to paint the scenes, with angle, pose, and detailed character information.""",
             expected_output=f"Storyboard for the {act_description} of the movie.",
@@ -294,62 +276,52 @@ Genre: {movie_genre}
         context=[write_third_act, storyboard_first_act, storyboard_second_act],
     )
 
-    def envision_storyboard_task(
-        movie_name,
-        movie_dir,
-        act_description,
-        storyboard_file,
-        image_file,
-        context=[],
-    ):
+    def illustrate_storyboard_task(movie_name, movie_dir, act_description, storyboard_file, illustration_file, context=[]):
         return Task(
-            description=f"""Create a storyboard of images for the {act_description} of {movie_name} based on the storyboard in {storyboard_file}.
-            The style of the images is {storyboard_visual_style}.
-            Also consult the overview of the movie in idea_final.md and the lookbook in lookbook.md.
-            Include a detailed description of the visual style and each character that is as consistent as possible, giving the world a consistent tone, color palette, and style across images.
-            Always include character full names and descriptions, like "John Smith, a tall man with long brown hair, pale skin, pointed nose, long brown coat", etc, with every generated image. Include the SAME description of the character in EVERY description sent to the ImageGenerator tool that includes that character.
-            Include consistent and detailed scene/environment descriptions, like "gothic noir cityscape with neon lights and rain", etc, with every generated image. Include the SAME description of the scene in EVERY description sent to the ImageGenerator tool that is in that environment.
+            description=f"""Create an illustrated storyboard for the {act_description} of {movie_name} based on the storyboard in {storyboard_file}.
+            Also consult the overview of the movie in idea_draft.md and the lookbook in lookbook.md.
+            Include a detailed description of the visual style and each character that is as consistent as possible, giving the world a consistent tone, color palette, and style across illustrations.
             If a character is old, young, tall, short, has a certain hair or clothing style, then specify that in the description.
-            Always include specific tonal prompts that reflect the image style, like "dark and moody" or "bright and colorful".
-            Include specific camera and framing details like "from above" or "close-up" or "wide shot".
+            Always include specific tonal prompts like "pixar, 3d animated, cartoon" or "realistic, gritty, 2d animated, realistic" to help guide the artists.
+            Include specific framing details like "from above" or "close-up".
+            Always include character descriptions, like "long brown hair, pale skin, pointed nose", etc, with every generated image.
             Clearly describe what is in the foreground, what is in the background, and any costumers or other details that are important.
             Clearly describe the relationship between the characters, for example whether one is pointing at another, or one is looking at another, or standing in front or behind the other.
             Include an image for every scene in the storyboard. Do not skip any images.
-            Where necessary, add a text bubble by saying "a speech bubble over [character name]'s head says 'I am a robot'".
-            YOU MUST FEED THE ENTIRE DESCRIPTION INTO THE ImageGenerator TOOL. DO NOT SKIP ANY DETAILS and repeat all the common details for each image to ensure a consistent style.
+            YOU MUST FEED THE ENTIRE DESCRIPTION INTO THE ImageGenerator TOOL. DO NOT SKIP ANY DETAILS.
             Use the ImageGenerator tool whenever you need to create an image and provide all the details I specified in the image description.
-            Link to the file returned by ImageGenerator in the markdown output.""",
-            expected_output=f"Storyboard for the {act_description} of the movie in markdown format with shot title, scene description and full embedded image. Do NOT wrap it in a code block.",
+            Use the URL returned by ImageGenerator EXACTLY as it is, and do not modify it in any way. Keep all the query parameters intact.""",
+            expected_output=f"Storyboard for the {act_description} of the movie in markdown format with shot title, description and full embedded image URL. Do NOT wrap it in a code block, and ALWAYS include the full image URL.",
             agent=director,
             tools=[docs_tool, file_tool, image_generator_tool],
-            output_file=f"{movie_dir}/{image_file}",
+            output_file=f"{movie_dir}/{illustration_file}",
             context=context,
         )
 
-    envision_first_act_storyboard = envision_storyboard_task(
+    illustrate_first_act_storyboard = illustrate_storyboard_task(
         movie_name,
         movie_dir,
         "first act",
         "first_act_storyboard_draft.md",
-        "first_act_image.md",
+        "first_act_illustration.md",
         context=[write_treatment, write_lookbook, storyboard_first_act],
     )
 
-    envision_second_act_storyboard = envision_storyboard_task(
+    illustrate_second_act_storyboard = illustrate_storyboard_task(
         movie_name,
         movie_dir,
         "second act",
         "second_act_storyboard_draft.md",
-        "second_act_image.md",
+        "second_act_illustration.md",
         context=[write_treatment, write_lookbook, storyboard_second_act],
     )
 
-    envision_third_act_storyboard = envision_storyboard_task(
+    illustrate_third_act_storyboard = illustrate_storyboard_task(
         movie_name,
         movie_dir,
         "third act",
         "third_act_storyboard_draft.md",
-        "third_act_image.md",
+        "third_act_illustration.md",
         context=[write_treatment, write_lookbook, storyboard_third_act],
     )
 
@@ -368,9 +340,9 @@ Genre: {movie_genre}
             # storyboard_first_act,
             # storyboard_second_act,
             # storyboard_third_act,
-            envision_first_act_storyboard,
-            envision_second_act_storyboard,
-            envision_third_act_storyboard,
+            illustrate_first_act_storyboard,
+            illustrate_second_act_storyboard,
+            illustrate_third_act_storyboard,
         ],
         verbose=2,
         process=Process.sequential,
@@ -473,6 +445,12 @@ def run_crewai_app():
         "Select the genre of the movie", ["Action", "Comedy", "Drama", "Sci-Fi"], 1
     )
 
+    movie_visual_style = st.selectbox(
+        "Select the visual style of the movie",
+        ["Realistic", "Cartoon", "Anime", "Pixar", "Gritty"],
+        1,
+    )
+
     storyboard_image_style = st.selectbox(
         "Select the image style of the storyboard",
         [style.value for style in ImageStylePresets],
@@ -494,11 +472,7 @@ def run_crewai_app():
             sys.stdout = StreamToExpander(st)
             with st.spinner("Generating Results"):
                 crew_result = create_crewai_setup(
-                    movie_slug,
-                    movie_name,
-                    movie_genre=movie_genre,
-                    storyboard_visual_style=storyboard_image_style,
-                    movie_idea=movie_idea,
+                    movie_slug, movie_name, movie_genre, movie_visual_style, movie_idea
                 )
 
         # Stop the stopwatch

@@ -92,6 +92,16 @@ micromamba activate douglas
    OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxx
    ```
 
+5. Set up Stable Diffusion API key
+
+   Head to https://platform.stability.ai/docs/api-reference#tag/Generate/paths/~1v2beta~1stable-image~1generate~1sd3/post
+
+   Put the key in .env like this:
+
+   ```
+   STABLE_DIFFUSION_API_KEY=sk-xxxxxxxxxxxxxxxxx
+   ```
+
 ### Running the Streamlit Application
 
 Once you've completed the setup steps, you can run the Streamlit application using the following command:

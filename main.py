@@ -314,7 +314,7 @@ Genre: {movie_genre}
             Include specific camera and framing details like "from above" or "close-up" or "wide shot".
             Clearly describe what is in the foreground, what is in the background, and any costumers or other details that are important.
             Clearly describe the relationship between the characters, for example whether one is pointing at another, or one is looking at another, or standing in front or behind the other.
-            Include an image for every scene in the storyboard. Do not skip any images.
+            Include an image for every scene in the storyboard. Do not skip any images. Do not repeat any images.
             Where necessary, add a text bubble by saying "a speech bubble over [character name]'s head says 'I am a robot'".
             YOU MUST FEED THE ENTIRE DESCRIPTION INTO THE ImageGenerator TOOL. DO NOT SKIP ANY DETAILS and repeat all the common details for each image to ensure a consistent style.
             Use the ImageGenerator tool whenever you need to create an image and provide all the details I specified in the image description.
@@ -331,7 +331,7 @@ Genre: {movie_genre}
         movie_dir,
         "first act",
         "first_act_storyboard_draft.md",
-        "first_act_image.md",
+        "first_act_images.md",
         context=[write_treatment, write_lookbook, storyboard_first_act],
     )
 
@@ -340,7 +340,7 @@ Genre: {movie_genre}
         movie_dir,
         "second act",
         "second_act_storyboard_draft.md",
-        "second_act_image.md",
+        "second_act_images.md",
         context=[write_treatment, write_lookbook, storyboard_second_act],
     )
 
@@ -349,7 +349,7 @@ Genre: {movie_genre}
         movie_dir,
         "third act",
         "third_act_storyboard_draft.md",
-        "third_act_image.md",
+        "third_act_images.md",
         context=[write_treatment, write_lookbook, storyboard_third_act],
     )
 
